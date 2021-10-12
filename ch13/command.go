@@ -1,6 +1,7 @@
-package agile
+package ch13
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -38,7 +39,7 @@ type SleepCommand struct {
 
 func NewSleepCommand(milliseconds int64, object *ActiveObject, wakeupCommand Command) *SleepCommand {
 	return &SleepCommand{
-		sleepTime:     milliseconds *1e6,
+		sleepTime:     milliseconds * 1e6,
 		engine:        object,
 		wakeupCommand: wakeupCommand,
 	}
@@ -47,7 +48,7 @@ func NewSleepCommand(milliseconds int64, object *ActiveObject, wakeupCommand Com
 func (a *SleepCommand) execute() error {
 	curr := time.Now().UnixNano()
 	//fmt.Println(curr,a.startTime,)
-	//time.Sleep(time.Millisecond*10)
+	time.Sleep(time.Millisecond)
 	if !a.started {
 		a.started = true
 		a.startTime = curr
@@ -68,7 +69,45 @@ type WakeupCommand struct {
 func NewWakeupCommand() *WakeupCommand {
 	return &WakeupCommand{}
 }
-func (w *WakeupCommand) execute()error {
+func (w *WakeupCommand) execute() error {
 	commandExecuted = true
+	return nil
+}
+
+var stop bool = false
+
+type StopCommand struct {
+}
+
+func NewStopCommand() *StopCommand {
+	return &StopCommand{}
+}
+func (w *StopCommand) execute() error {
+	stop = true
+	return nil
+}
+
+type DelayedTyper struct {
+	itsDelay int64
+	itsChar  uint8
+	engine   *ActiveObject
+}
+
+func NewDelayedTyper(engine *ActiveObject, delay int64, c uint8) *DelayedTyper {
+	return &DelayedTyper{
+		itsDelay: delay,
+		itsChar:  c,
+		engine:   engine,
+	}
+}
+
+func (d *DelayedTyper) delayAndRepeat() {
+	d.engine.addCommand(NewSleepCommand(d.itsDelay, d.engine, d))
+}
+func (d *DelayedTyper) execute() error {
+	fmt.Printf("%c", d.itsChar)
+	if !stop {
+		d.delayAndRepeat()
+	}
 	return nil
 }
